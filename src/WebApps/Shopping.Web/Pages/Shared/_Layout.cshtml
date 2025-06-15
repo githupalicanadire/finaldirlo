@@ -135,48 +135,113 @@
         }
 
         .card {
-            background-color: var(--dark-card-bg);
-            border: none;
-            border-radius: 15px;
-            box-shadow: var(--shadow-md);
-            transition: transform var(--transition-speed);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            transition: all var(--transition-speed);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-speed);
         }
 
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .card:hover::before {
+            opacity: 1;
         }
 
         .btn {
-            border-radius: 8px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 500;
+            border-radius: var(--border-radius-sm);
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
             transition: all var(--transition-speed);
+            position: relative;
+            overflow: hidden;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-            transform: translateY(-2px);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--error-color), #dc2626);
+            color: white;
         }
 
         .form-control {
-            background-color: var(--dark-card-bg);
-            border: 1px solid var(--dark-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
             color: var(--dark-text);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius-sm);
+            padding: 1rem 1.25rem;
+            transition: all var(--transition-speed);
+            font-weight: 500;
         }
 
         .form-control:focus {
-            background-color: var(--dark-card-bg);
+            background: var(--dark-card-bg-light);
             border-color: var(--primary-color);
             color: var(--dark-text);
-            box-shadow: 0 0 0 0.2rem rgba(76,175,80,0.25);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-control::placeholder {
+            color: var(--dark-text-secondary);
         }
 
         .table {
