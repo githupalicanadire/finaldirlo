@@ -25,7 +25,7 @@ public class IndexModel : PageModel
         {
             logger.LogInformation("Loading products for home page");
 
-            var response = await catalogService.GetProducts();
+            var response = await catalogService.GetAllProducts();
             if (response?.Products == null)
             {
                 logger.LogWarning("No products returned from catalog service");
@@ -33,7 +33,11 @@ public class IndexModel : PageModel
             }
 
             ProductList = response.Products;
-            Categories = ProductList.SelectMany(p => p.Category).Distinct();
+            Categories = response.Products
+                .SelectMany(p => p.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
 
             return Page();
         }

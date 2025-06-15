@@ -1,0 +1,345 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="hero-card">
+    <div class="hero-background"></div>
+    <div class="hero-content container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="hero-title">Welcome to EShop</h1>
+                <p class="hero-subtitle">Your one-stop shop for all your shopping needs. Browse through our extensive collection of products and enjoy a seamless shopping experience.</p>
+                <div class="hero-buttons">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <p class="mb-4">Welcome <strong>@User.Identity.Name</strong></p>
+                        <a href="/Account/Logout" class="btn btn-hero-outline me-3">Logout</a>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login" class="btn btn-hero me-3">Login</a>
+                        <a href="/Account/Register" class="btn btn-hero-outline">Register</a>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="hero-icon-container">
+                    <i class="fas fa-shopping-cart hero-icon"></i>
+                    <div class="icon-glow"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="section-title">
+        <h2 class="title-text">Our Features</h2>
+        <div class="title-decoration"></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-card p-4">
+                <div class="feature-icon-wrapper">
+                    <i class="fas fa-truck feature-icon"></i>
+                    <i class="fas fa-truck feature-bg-icon"></i>
+                </div>
+                <h3 class="feature-title">Fast Delivery</h3>
+                <p class="feature-text">Get your orders delivered quickly with real-time tracking.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card p-4">
+                <div class="feature-icon-wrapper">
+                    <i class="fas fa-shield-alt feature-icon"></i>
+                    <i class="fas fa-shield-alt feature-bg-icon"></i>
+                </div>
+                <h3 class="feature-title">Secure Shopping</h3>
+                <p class="feature-text">Safe and secure payment processing with end-to-end encryption.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card p-4">
+                <div class="feature-icon-wrapper">
+                    <i class="fas fa-headset feature-icon"></i>
+                    <i class="fas fa-headset feature-bg-icon"></i>
+                </div>
+                <h3 class="feature-title">24/7 Support</h3>
+                <p class="feature-text">Always here to help you with expert support and quick solutions.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --accent-color: #764ba2;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.15);
+            min-height: 400px;
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .hero-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 50%, rgba(240, 147, 251, 0.1) 100%);
+            border-radius: 20px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-weight: 400;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-buttons {
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .btn-hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn-hero:hover::before {
+            left: 100%;
+        }
+
+        .btn-hero:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-hero-outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-hero-outline:hover {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border-color: transparent;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .hero-icon-container {
+            position: relative;
+            display: inline-block;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .hero-icon {
+            font-size: 8rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 3s infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3), transparent 70%);
+            border-radius: 50%;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        .section-title {
+            text-align: center;
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .title-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-decoration {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 2px;
+        }
+
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            background: var(--glass-bg);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.15);
+        }
+
+        .feature-icon-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 2;
+        }
+
+        .feature-bg-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6rem;
+            color: rgba(102, 126, 234, 0.05);
+            z-index: 1;
+        }
+
+        .feature-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .feature-text {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes glow {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.3;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            .hero-icon {
+                font-size: 5rem;
+            }
+            .btn-hero, .btn-hero-outline {
+                padding: 0.75rem 2rem;
+                font-size: 0.9rem;
+            }
+            .title-text {
+                font-size: 2rem;
+            }
+        }
+    </style>
+} 
