@@ -4,163 +4,169 @@ using IdentityServer4.Models;
 using IdentityServer4.Stores;
 using MongoDB.Driver;
 using MongoDB.Bson;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Identity.API.Data;
-
-public class MongoIdentityContext
+namespace Identity.API.Data
 {
-    private readonly IMongoDatabase _database;
-    private readonly MongoDbSettings _settings;
-
-    public MongoIdentityContext(IMongoDatabase database, MongoDbSettings settings)
+    public class MongoIdentityContext
     {
-        _database = database;
-        _settings = settings;
-    }
+        private readonly IMongoDatabase _database;
+        private readonly MongoDbSettings _settings;
 
-    public IMongoCollection<ApplicationUser> Users =>
-        _database.GetCollection<ApplicationUser>(_settings.UsersCollectionName);
-
-    public IMongoCollection<ApplicationRole> Roles =>
-        _database.GetCollection<ApplicationRole>(_settings.RolesCollectionName);
-
-    public IMongoCollection<Client> Clients =>
-        _database.GetCollection<Client>(_settings.ClientsCollectionName);
-
-    public IMongoCollection<IdentityResource> IdentityResources =>
-        _database.GetCollection<IdentityResource>(_settings.IdentityResourcesCollectionName);
-
-    public IMongoCollection<ApiResource> ApiResources =>
-        _database.GetCollection<ApiResource>(_settings.ApiResourcesCollectionName);
-
-    public IMongoCollection<ApiScope> ApiScopes =>
-        _database.GetCollection<ApiScope>(_settings.ApiScopesCollectionName);
-
-    public IMongoCollection<PersistedGrant> PersistedGrants =>
-        _database.GetCollection<PersistedGrant>(_settings.PersistedGrantsCollectionName);
-
-    public IMongoCollection<DeviceFlowCodes> DeviceFlowCodes =>
-        _database.GetCollection<DeviceFlowCodes>(_settings.DeviceFlowCodesCollectionName);
-}
-
-public class MongoPersistedGrantStore : IPersistedGrantStore
-{
-    private readonly MongoIdentityContext _context;
-    private readonly ILogger<MongoPersistedGrantStore> _logger;
-
-    public MongoPersistedGrantStore(MongoIdentityContext context, ILogger<MongoPersistedGrantStore> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-
-    public async Task StoreAsync(PersistedGrant grant)
-    {
-        try
+        public MongoIdentityContext(IMongoDatabase database, MongoDbSettings settings)
         {
-            var existingGrant = await _context.PersistedGrants
-                .Find(x => x.Key == grant.Key)
-                .FirstOrDefaultAsync();
+            _database = database;
+            _settings = settings;
+        }
 
-            if (existingGrant == null)
+        public IMongoCollection<ApplicationUser> Users =>
+            _database.GetCollection<ApplicationUser>(_settings.UsersCollectionName);
+
+        public IMongoCollection<ApplicationRole> Roles =>
+            _database.GetCollection<ApplicationRole>(_settings.RolesCollectionName);
+
+        public IMongoCollection<Client> Clients =>
+            _database.GetCollection<Client>(_settings.ClientsCollectionName);
+
+        public IMongoCollection<IdentityResource> IdentityResources =>
+            _database.GetCollection<IdentityResource>(_settings.IdentityResourcesCollectionName);
+
+        public IMongoCollection<ApiResource> ApiResources =>
+            _database.GetCollection<ApiResource>(_settings.ApiResourcesCollectionName);
+
+        public IMongoCollection<ApiScope> ApiScopes =>
+            _database.GetCollection<ApiScope>(_settings.ApiScopesCollectionName);
+
+        public IMongoCollection<PersistedGrant> PersistedGrants =>
+            _database.GetCollection<PersistedGrant>(_settings.PersistedGrantsCollectionName);
+
+        public IMongoCollection<DeviceFlowCodes> DeviceFlowCodes =>
+            _database.GetCollection<DeviceFlowCodes>(_settings.DeviceFlowCodesCollectionName);
+    }
+
+    public class MongoPersistedGrantStore : IPersistedGrantStore
+    {
+        private readonly MongoIdentityContext _context;
+        private readonly ILogger<MongoPersistedGrantStore> _logger;
+
+        public MongoPersistedGrantStore(MongoIdentityContext context, ILogger<MongoPersistedGrantStore> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        public async Task StoreAsync(PersistedGrant grant)
+        {
+            try
             {
-                await _context.PersistedGrants.InsertOneAsync(grant);
+                var existingGrant = await _context.PersistedGrants
+                    .Find(x => x.Key == grant.Key)
+                    .FirstOrDefaultAsync();
+
+                if (existingGrant == null)
+                {
+                    await _context.PersistedGrants.InsertOneAsync(grant);
+                }
+                else
+                {
+                    await _context.PersistedGrants.ReplaceOneAsync(x => x.Key == grant.Key, grant);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await _context.PersistedGrants.ReplaceOneAsync(x => x.Key == grant.Key, grant);
+                _logger.LogError(ex, "Failed to store persisted grant {Key}", grant.Key);
+                throw;
             }
         }
-        catch (Exception ex)
+
+        public async Task<PersistedGrant> GetAsync(string key)
         {
-            _logger.LogError(ex, "Failed to store persisted grant {Key}", grant.Key);
-            throw;
+            try
+            {
+                return await _context.PersistedGrants
+                    .Find(x => x.Key == key)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get persisted grant {Key}", key);
+                throw;
+            }
         }
-    }
 
-    public async Task<PersistedGrant?> GetAsync(string key)
-    {
-        try
+        public async Task<IEnumerable<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter)
         {
-            return await _context.PersistedGrants
-                .Find(x => x.Key == key)
-                .FirstOrDefaultAsync();
+            try
+            {
+                var filterBuilder = Builders<PersistedGrant>.Filter;
+                var mongoFilter = filterBuilder.Empty;
+
+                if (!string.IsNullOrEmpty(filter.ClientId))
+                    mongoFilter &= filterBuilder.Eq(x => x.ClientId, filter.ClientId);
+
+                if (!string.IsNullOrEmpty(filter.SessionId))
+                    mongoFilter &= filterBuilder.Eq(x => x.SessionId, filter.SessionId);
+
+                if (!string.IsNullOrEmpty(filter.SubjectId))
+                    mongoFilter &= filterBuilder.Eq(x => x.SubjectId, filter.SubjectId);
+
+                if (!string.IsNullOrEmpty(filter.Type))
+                    mongoFilter &= filterBuilder.Eq(x => x.Type, filter.Type);
+
+                return await _context.PersistedGrants
+                    .Find(mongoFilter)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get all persisted grants");
+                throw;
+            }
         }
-        catch (Exception ex)
+
+        public async Task RemoveAsync(string key)
         {
-            _logger.LogError(ex, "Failed to get persisted grant {Key}", key);
-            throw;
+            try
+            {
+                await _context.PersistedGrants.DeleteOneAsync(x => x.Key == key);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove persisted grant {Key}", key);
+                throw;
+            }
         }
-    }
 
-    public async Task<IEnumerable<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter)
-    {
-        try
+        public async Task RemoveAllAsync(PersistedGrantFilter filter)
         {
-            var filterBuilder = Builders<PersistedGrant>.Filter;
-            var mongoFilter = filterBuilder.Empty;
+            try
+            {
+                var filterBuilder = Builders<PersistedGrant>.Filter;
+                var mongoFilter = filterBuilder.Empty;
 
-            if (!string.IsNullOrEmpty(filter.ClientId))
-                mongoFilter &= filterBuilder.Eq(x => x.ClientId, filter.ClientId);
+                if (!string.IsNullOrEmpty(filter.ClientId))
+                    mongoFilter &= filterBuilder.Eq(x => x.ClientId, filter.ClientId);
 
-            if (!string.IsNullOrEmpty(filter.SessionId))
-                mongoFilter &= filterBuilder.Eq(x => x.SessionId, filter.SessionId);
+                if (!string.IsNullOrEmpty(filter.SessionId))
+                    mongoFilter &= filterBuilder.Eq(x => x.SessionId, filter.SessionId);
 
-            if (!string.IsNullOrEmpty(filter.SubjectId))
-                mongoFilter &= filterBuilder.Eq(x => x.SubjectId, filter.SubjectId);
+                if (!string.IsNullOrEmpty(filter.SubjectId))
+                    mongoFilter &= filterBuilder.Eq(x => x.SubjectId, filter.SubjectId);
 
-            if (!string.IsNullOrEmpty(filter.Type))
-                mongoFilter &= filterBuilder.Eq(x => x.Type, filter.Type);
+                if (!string.IsNullOrEmpty(filter.Type))
+                    mongoFilter &= filterBuilder.Eq(x => x.Type, filter.Type);
 
-            return await _context.PersistedGrants
-                .Find(mongoFilter)
-                .ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get all persisted grants");
-            throw;
-        }
-    }
-
-    public async Task RemoveAsync(string key)
-    {
-        try
-        {
-            await _context.PersistedGrants.DeleteOneAsync(x => x.Key == key);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to remove persisted grant {Key}", key);
-            throw;
-        }
-    }
-
-    public async Task RemoveAllAsync(PersistedGrantFilter filter)
-    {
-        try
-        {
-            var filterBuilder = Builders<PersistedGrant>.Filter;
-            var mongoFilter = filterBuilder.Empty;
-
-            if (!string.IsNullOrEmpty(filter.ClientId))
-                mongoFilter &= filterBuilder.Eq(x => x.ClientId, filter.ClientId);
-
-            if (!string.IsNullOrEmpty(filter.SessionId))
-                mongoFilter &= filterBuilder.Eq(x => x.SessionId, filter.SessionId);
-
-            if (!string.IsNullOrEmpty(filter.SubjectId))
-                mongoFilter &= filterBuilder.Eq(x => x.SubjectId, filter.SubjectId);
-
-            if (!string.IsNullOrEmpty(filter.Type))
-                mongoFilter &= filterBuilder.Eq(x => x.Type, filter.Type);
-
-            await _context.PersistedGrants.DeleteManyAsync(mongoFilter);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to remove all persisted grants");
-            throw;
+                await _context.PersistedGrants.DeleteManyAsync(mongoFilter);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove all persisted grants");
+                throw;
+            }
         }
     }
 }
