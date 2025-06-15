@@ -60,6 +60,9 @@ public class Program
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
+            // Wait a bit for MongoDB to be ready
+            Task.Delay(5000).Wait();
+
             // Seed Identity Data
             SeedIdentityData(userManager, roleManager).Wait();
 
@@ -73,54 +76,62 @@ public class Program
 
     private static async Task SeedIdentityData(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
     {
-        // Create Roles
-        string[] roles = { "Admin", "Customer", "User", "Tester" };
-        foreach (var role in roles)
+        try
         {
-            if (!await roleManager.RoleExistsAsync(role))
+            // Create Roles
+            string[] roles = { "Admin", "Customer", "User", "Tester" };
+            foreach (var role in roles)
             {
-                await roleManager.CreateAsync(new ApplicationRole { Name = role, Description = $"{role} role" });
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new ApplicationRole { Name = role, Description = $"{role} role" });
+                    Log.Information($"Role {role} created");
+                }
+            }
+
+            // Create Users from TestUsers
+            foreach (var testUser in TestUsers.Users)
+            {
+                var user = await userManager.FindByNameAsync(testUser.Username);
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        UserName = testUser.Username,
+                        Email = testUser.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? $"{testUser.Username}@eshop.com",
+                        EmailConfirmed = true,
+                        FirstName = testUser.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value ?? testUser.Username,
+                        LastName = testUser.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value ?? "User",
+                        PhoneNumberConfirmed = true,
+                        IsActive = true
+                    };
+
+                    var result = await userManager.CreateAsync(user, testUser.Password);
+                    if (result.Succeeded)
+                    {
+                        // Add claims
+                        await userManager.AddClaimsAsync(user, testUser.Claims);
+                        
+                        // Add to role
+                        var roleClaimValue = testUser.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
+                        if (!string.IsNullOrEmpty(roleClaimValue))
+                        {
+                            var roleName = char.ToUpper(roleClaimValue[0]) + roleClaimValue.Substring(1);
+                            await userManager.AddToRoleAsync(user, roleName);
+                        }
+                        
+                        Log.Information($"User {testUser.Username} created successfully");
+                    }
+                    else
+                    {
+                        Log.Error($"Failed to create user {testUser.Username}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                    }
+                }
             }
         }
-
-        // Create Users from TestUsers
-        foreach (var testUser in TestUsers.Users)
+        catch (Exception ex)
         {
-            var user = await userManager.FindByNameAsync(testUser.Username);
-            if (user == null)
-            {
-                user = new ApplicationUser
-                {
-                    UserName = testUser.Username,
-                    Email = testUser.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
-                    EmailConfirmed = true,
-                    FirstName = testUser.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value,
-                    LastName = testUser.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value,
-                    PhoneNumberConfirmed = true,
-                    IsActive = true
-                };
-
-                var result = await userManager.CreateAsync(user, testUser.Password);
-                if (result.Succeeded)
-                {
-                    // Add claims
-                    await userManager.AddClaimsAsync(user, testUser.Claims);
-                    
-                    // Add to role
-                    var roleClaimValue = testUser.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
-                    if (!string.IsNullOrEmpty(roleClaimValue))
-                    {
-                        var roleName = char.ToUpper(roleClaimValue[0]) + roleClaimValue.Substring(1);
-                        await userManager.AddToRoleAsync(user, roleName);
-                    }
-                    
-                    Log.Information($"User {testUser.Username} created successfully");
-                }
-                else
-                {
-                    Log.Error($"Failed to create user {testUser.Username}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-                }
-            }
+            Log.Error(ex, "Error seeding identity data");
         }
     }
 }
@@ -138,23 +149,16 @@ public class Startup
     {
         // MongoDB Configuration
         var mongoDbSettings = Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>() ?? new MongoDbSettings();
+        if (string.IsNullOrEmpty(mongoDbSettings.ConnectionString))
+        {
+            mongoDbSettings.ConnectionString = "mongodb://admin:admin123@identitydb:27017/IdentityServerDb?authSource=admin";
+        }
+        if (string.IsNullOrEmpty(mongoDbSettings.DatabaseName))
+        {
+            mongoDbSettings.DatabaseName = "IdentityServerDb";
+        }
+        
         services.AddSingleton(mongoDbSettings);
-
-        // MongoDB Client
-        services.AddSingleton<IMongoClient>(sp =>
-        {
-            return new MongoClient(mongoDbSettings.ConnectionString);
-        });
-
-        // MongoDB Database
-        services.AddSingleton<IMongoDatabase>(sp =>
-        {
-            var client = sp.GetRequiredService<IMongoClient>();
-            return client.GetDatabase(mongoDbSettings.DatabaseName);
-        });
-
-        // MongoDB Context
-        services.AddSingleton<MongoIdentityContext>();
 
         // MongoDB Identity Configuration
         var mongoDbIdentityConfig = new MongoDbIdentityConfiguration
@@ -176,6 +180,11 @@ public class Startup
                 // User settings
                 options.User.RequireUniqueEmail = true;
                 options.SignIn.RequireConfirmedEmail = false;
+                
+                // Lockout settings
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
             }
         };
 
@@ -190,6 +199,12 @@ public class Startup
             options.Events.RaiseFailureEvents = true;
             options.Events.RaiseSuccessEvents = true;
             options.EmitStaticAudienceClaim = true;
+            
+            // Set issuer name
+            if (!string.IsNullOrEmpty(Configuration["ASPNETCORE_URLS"]))
+            {
+                options.IssuerUri = Configuration["ASPNETCORE_URLS"];
+            }
         })
         .AddInMemoryIdentityResources(Config.IdentityResources)
         .AddInMemoryApiScopes(Config.ApiScopes)
@@ -204,20 +219,17 @@ public class Startup
             options.AddPolicy("CorsPolicy", policy =>
             {
                 policy
-                    .WithOrigins(
-                        "http://localhost:6005",
-                        "https://localhost:6005",
-                        "http://localhost:6004",
-                        "https://localhost:6004"
-                    )
+                    .AllowAnyOrigin()
                     .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
+                    .AllowAnyMethod();
             });
         });
 
         // MVC
         services.AddControllersWithViews();
+        
+        // Health Checks
+        services.AddHealthChecks();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -225,6 +237,10 @@ public class Startup
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Home/Error");
         }
 
         app.UseStaticFiles();
@@ -237,6 +253,7 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapDefaultControllerRoute();
+            endpoints.MapHealthChecks("/health");
         });
     }
 }
