@@ -6,7 +6,7 @@
     "preinstall": "echo 'Installing development tools for .NET microservices project...'",
     "install": "npm install http-server --save-dev",
     "dev": "echo 'Starting development server for .NET microservices project...' && npm run serve:info",
-    "serve:info": "npx http-server . -p 3000 -o --proxy http://localhost:6005? -c-1",
+    "serve:info": "npx http-server . -p 8080 -o -c-1",
     "start": "npm run dev",
     "setup": "echo 'Please run setup.ps1 script in PowerShell for full setup'",
     "docker:up": "docker-compose -f src/docker-compose.yml -f src/docker-compose.override.yml up -d",
