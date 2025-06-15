@@ -13,28 +13,3 @@ public class MongoDbSettings
     public string PersistedGrantsCollectionName { get; set; } = "PersistedGrants";
     public string DeviceFlowCodesCollectionName { get; set; } = "DeviceFlowCodes";
 }
-
-public static class MongoDbConfig
-{
-    public static void RegisterClassMaps()
-    {
-        // Ensure class maps are registered only once
-        if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(ApplicationUser)))
-        {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<ApplicationUser>(cm =>
-            {
-                cm.AutoMap();
-                cm.SetIgnoreExtraElements(true);
-            });
-        }
-
-        if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(ApplicationRole)))
-        {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<ApplicationRole>(cm =>
-            {
-                cm.AutoMap();
-                cm.SetIgnoreExtraElements(true);
-            });
-        }
-    }
-}
