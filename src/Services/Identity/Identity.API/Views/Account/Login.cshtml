@@ -1,0 +1,105 @@
+@model LoginViewModel
+
+<div class="login-page">
+    <div class="page-header">
+        <h1>
+            <i class="fa fa-sign-in"></i>
+            Login
+            <small>Sign in to your account</small>
+        </h1>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            @if (Model.EnableLocalLogin)
+            {
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Local Login</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                            <fieldset>
+                                <div class="form-group">
+                                    <label asp-for="Username"></label>
+                                    <input class="form-control" placeholder="Username" asp-for="Username" autofocus>
+                                    <span asp-validation-for="Username" class="text-danger"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="Password"></label>
+                                    <input type="password" class="form-control" placeholder="Password" asp-for="Password" autocomplete="off">
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                </div>
+                                @if (Model.AllowRememberLogin)
+                                {
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label asp-for="RememberLogin">
+                                                <input asp-for="RememberLogin">
+                                                <strong>Remember My Login</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
+                                <div class="form-group">
+                                    <button class="btn btn-primary" name="button" value="login">Login</button>
+                                    <button class="btn btn-default" name="button" value="cancel">Cancel</button>
+                                </div>
+                                <div class="form-group">
+                                    <a asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl" class="btn btn-link">Don't have an account? Register here</a>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Demo Users Info -->
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Demo Users</h3>
+                    </div>
+                    <div class="panel-body">
+                        <p><strong>For testing purposes, you can use these demo accounts:</strong></p>
+                        <ul>
+                            <li><strong>admin</strong> / admin123 (Admin Role)</li>
+                            <li><strong>customer</strong> / customer123 (Customer Role)</li>
+                            <li><strong>demo</strong> / demo123 (User Role)</li>
+                            <li><strong>test</strong> / test123 (Tester Role)</li>
+                        </ul>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.VisibleExternalProviders.Any())
+        {
+            <div class="col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">External Login</h3>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="list-inline">
+                            @foreach (var provider in Model.VisibleExternalProviders)
+                            {
+                                <li>
+                                    <a class="btn btn-default"
+                                       asp-controller="External"
+                                       asp-action="Challenge"
+                                       asp-route-scheme="@provider.AuthenticationScheme"
+                                       asp-route-returnUrl="@Model.ReturnUrl">
+                                        @provider.DisplayName
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
