@@ -1,6 +1,7 @@
 using Identity.API.Configuration;
 using Identity.API.Models;
 using IdentityServer4.Models;
+using IdentityServer4.Stores;
 using MongoDB.Driver;
 using MongoDB.Bson;
 
@@ -42,7 +43,7 @@ public class MongoIdentityContext
         _database.GetCollection<DeviceFlowCodes>(_settings.DeviceFlowCodesCollectionName);
 }
 
-public class MongoPersistedGrantStore : IdentityServer4.Stores.IPersistedGrantStore
+public class MongoPersistedGrantStore : IPersistedGrantStore
 {
     private readonly MongoIdentityContext _context;
     private readonly ILogger<MongoPersistedGrantStore> _logger;
@@ -77,7 +78,7 @@ public class MongoPersistedGrantStore : IdentityServer4.Stores.IPersistedGrantSt
         }
     }
 
-    public async Task<PersistedGrant> GetAsync(string key)
+    public async Task<PersistedGrant?> GetAsync(string key)
     {
         try
         {
