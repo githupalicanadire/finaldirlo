@@ -246,30 +246,90 @@
 
         .table {
             color: var(--dark-text);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            overflow: hidden;
         }
 
         .table-dark {
-            background-color: var(--dark-card-bg);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
         }
 
         .table-dark td, .table-dark th {
-            border-color: var(--dark-border);
+            border-color: var(--glass-border);
+            padding: 1rem;
+        }
+
+        .table-dark th {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .table-dark tr:hover {
+            background: var(--dark-card-bg-light);
+            transform: scale(1.01);
+            transition: all var(--transition-speed);
         }
 
         footer {
-            background-color: var(--dark-card-bg);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
             color: var(--dark-text-secondary);
-            padding: 2rem 0;
+            padding: 3rem 0 2rem 0;
             margin-top: auto;
+            position: relative;
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+        }
+
+        footer h5 {
+            color: var(--dark-text);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        footer h5::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 2px;
         }
 
         footer a {
-            color: var(--primary-color);
+            color: var(--dark-text-secondary);
             text-decoration: none;
+            transition: all var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0;
         }
 
         footer a:hover {
-            color: var(--primary-light);
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        footer ul li {
+            margin-bottom: 0.5rem;
         }
 
         .scroll-progress {
@@ -277,10 +337,94 @@
             top: 0;
             left: 0;
             width: 0;
-            height: 3px;
-            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--accent-light));
             z-index: 9999;
             transition: width 0.1s ease;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Animasyonlar */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .navbar-brand {
+            animation: fadeInLeft 0.8s ease-out;
+        }
+
+        /* Responsive tasarım */
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.3rem;
+            }
+
+            .nav-link {
+                padding: 0.5rem 1rem;
+                margin: 0.1rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1.5rem;
+                font-size: 0.85rem;
+            }
+
+            .card {
+                margin-bottom: 1.5rem;
+            }
+
+            footer {
+                padding: 2rem 0 1rem 0;
+            }
+        }
+
+        /* Özel scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
         }
     </style>
 </head>
