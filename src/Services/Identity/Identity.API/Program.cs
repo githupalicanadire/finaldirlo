@@ -12,14 +12,23 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Identity.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            var host = CreateHostBuilder(args).Build();
+            
+            // Seed demo users
+            using (var scope = host.Services.CreateScope())
+            {
+                await SeedDemoUsers(scope.ServiceProvider);
+            }
+            
+            host.Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -28,6 +37,55 @@ namespace Identity.API
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+
+        private static async Task SeedDemoUsers(IServiceProvider serviceProvider)
+        {
+            try
+            {
+                var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+                var roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+
+                // Create roles
+                if (!await roleManager.RoleExistsAsync("Admin"))
+                    await roleManager.CreateAsync(new ApplicationRole { Name = "Admin" });
+                if (!await roleManager.RoleExistsAsync("Customer"))
+                    await roleManager.CreateAsync(new ApplicationRole { Name = "Customer" });
+
+                // Create admin user
+                if (await userManager.FindByNameAsync("admin") == null)
+                {
+                    var adminUser = new ApplicationUser
+                    {
+                        UserName = "admin",
+                        Email = "admin@eshop.com",
+                        EmailConfirmed = true,
+                        FirstName = "Admin",
+                        LastName = "User"
+                    };
+                    await userManager.CreateAsync(adminUser, "admin123");
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                }
+
+                // Create customer user
+                if (await userManager.FindByNameAsync("customer") == null)
+                {
+                    var customerUser = new ApplicationUser
+                    {
+                        UserName = "customer",
+                        Email = "customer@eshop.com",
+                        EmailConfirmed = true,
+                        FirstName = "Customer",
+                        LastName = "User"
+                    };
+                    await userManager.CreateAsync(customerUser, "customer123");
+                    await userManager.AddToRoleAsync(customerUser, "Customer");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error seeding users: {ex.Message}");
+            }
+        }
     }
 
     public class Startup
