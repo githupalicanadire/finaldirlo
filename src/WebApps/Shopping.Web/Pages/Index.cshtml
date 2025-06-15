@@ -39,17 +39,24 @@
     <!-- Categories Section -->
     <div class="row mb-5">
         <div class="col-12">
-            <h2 class="mb-4">Shop by Category</h2>
+            <h2 class="section-title mb-5">
+                <span class="title-text">Shop by Category</span>
+                <span class="title-decoration"></span>
+            </h2>
         </div>
         @foreach (var category in Model.Categories)
         {
             <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="fas fa-puzzle-piece fa-3x mb-3" style="color: var(--primary-color)"></i>
-                        <h5 class="card-title">@category</h5>
-                        <a asp-page="ProductList" asp-route-categoryName="@category" class="btn btn-outline-primary mt-3">
-                            View Products
+                <div class="category-card glass-card h-100">
+                    <div class="category-card-inner text-center p-4">
+                        <div class="category-icon-wrapper">
+                            <i class="fas fa-puzzle-piece category-icon"></i>
+                            <div class="icon-ripple"></div>
+                        </div>
+                        <h5 class="category-title">@category</h5>
+                        <a asp-page="ProductList" asp-route-categoryName="@category" class="btn btn-category mt-3">
+                            <span>View Products</span>
+                            <i class="fas fa-arrow-right ms-2"></i>
                         </a>
                     </div>
                 </div>
@@ -60,32 +67,44 @@
     <!-- Features Section -->
     <div class="row mb-5">
         <div class="col-12">
-            <h2 class="mb-4">Why Choose Us</h2>
+            <h2 class="section-title mb-5">
+                <span class="title-text">Why Choose Us</span>
+                <span class="title-decoration"></span>
+            </h2>
         </div>
         <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-truck fa-3x mb-3" style="color: var(--primary-color)"></i>
-                    <h5 class="card-title">Fast Delivery</h5>
-                    <p class="card-text">Quick and reliable shipping to your doorstep.</p>
+            <div class="feature-card glass-card h-100">
+                <div class="feature-card-inner text-center p-4">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-truck feature-icon"></i>
+                        <div class="feature-bg-icon fas fa-truck"></div>
+                    </div>
+                    <h5 class="feature-title">Fast Delivery</h5>
+                    <p class="feature-text">Quick and reliable shipping to your doorstep with real-time tracking.</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-shield-alt fa-3x mb-3" style="color: var(--primary-color)"></i>
-                    <h5 class="card-title">Secure Shopping</h5>
-                    <p class="card-text">Safe and secure payment processing.</p>
+            <div class="feature-card glass-card h-100">
+                <div class="feature-card-inner text-center p-4">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-shield-alt feature-icon"></i>
+                        <div class="feature-bg-icon fas fa-shield-alt"></div>
+                    </div>
+                    <h5 class="feature-title">Secure Shopping</h5>
+                    <p class="feature-text">Safe and secure payment processing with end-to-end encryption.</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-headset fa-3x mb-3" style="color: var(--primary-color)"></i>
-                    <h5 class="card-title">24/7 Support</h5>
-                    <p class="card-text">Always here to help you with any questions.</p>
+            <div class="feature-card glass-card h-100">
+                <div class="feature-card-inner text-center p-4">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-headset feature-icon"></i>
+                        <div class="feature-bg-icon fas fa-headset"></div>
+                    </div>
+                    <h5 class="feature-title">24/7 Support</h5>
+                    <p class="feature-text">Always here to help you with expert support and quick solutions.</p>
                 </div>
             </div>
         </div>
