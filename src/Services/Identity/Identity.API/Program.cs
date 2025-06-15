@@ -25,9 +25,6 @@ public class Program
         {
             Log.Information("Starting Identity Server with MongoDB...");
             
-            // Register MongoDB Class Maps
-            MongoDbConfig.RegisterClassMaps();
-            
             var host = CreateHostBuilder(args).Build();
             
             // Initialize Database
@@ -60,12 +57,8 @@ public class Program
 
         try
         {
-            var context = services.GetRequiredService<MongoIdentityContext>();
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
-
-            // Seed Configuration Data
-            SeedConfigurationData(context).Wait();
 
             // Seed Identity Data
             SeedIdentityData(userManager, roleManager).Wait();
@@ -75,45 +68,6 @@ public class Program
         catch (Exception ex)
         {
             Log.Error(ex, "An error occurred seeding the database");
-        }
-    }
-
-    private static async Task SeedConfigurationData(MongoIdentityContext context)
-    {
-        // Seed Clients
-        var clientsCount = await context.Clients.CountDocumentsAsync(_ => true);
-        if (clientsCount == 0)
-        {
-            var clients = Config.Clients.ToList();
-            await context.Clients.InsertManyAsync(clients);
-            Log.Information("Clients seeded");
-        }
-
-        // Seed Identity Resources
-        var identityResourcesCount = await context.IdentityResources.CountDocumentsAsync(_ => true);
-        if (identityResourcesCount == 0)
-        {
-            var identityResources = Config.IdentityResources.ToList();
-            await context.IdentityResources.InsertManyAsync(identityResources);
-            Log.Information("Identity resources seeded");
-        }
-
-        // Seed API Scopes
-        var apiScopesCount = await context.ApiScopes.CountDocumentsAsync(_ => true);
-        if (apiScopesCount == 0)
-        {
-            var apiScopes = Config.ApiScopes.ToList();
-            await context.ApiScopes.InsertManyAsync(apiScopes);
-            Log.Information("API scopes seeded");
-        }
-
-        // Seed API Resources
-        var apiResourcesCount = await context.ApiResources.CountDocumentsAsync(_ => true);
-        if (apiResourcesCount == 0)
-        {
-            var apiResources = Config.ApiResources.ToList();
-            await context.ApiResources.InsertManyAsync(apiResources);
-            Log.Information("API resources seeded");
         }
     }
 
@@ -183,7 +137,7 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // MongoDB Configuration
-        var mongoDbSettings = Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>();
+        var mongoDbSettings = Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>() ?? new MongoDbSettings();
         services.AddSingleton(mongoDbSettings);
 
         // MongoDB Client
@@ -228,7 +182,7 @@ public class Startup
         // ASP.NET Core Identity with MongoDB
         services.ConfigureMongoDbIdentity<ApplicationUser, ApplicationRole, ObjectId>(mongoDbIdentityConfig);
 
-        // IdentityServer4 with MongoDB
+        // IdentityServer4
         services.AddIdentityServer(options =>
         {
             options.Events.RaiseErrorEvents = true;
@@ -243,9 +197,6 @@ public class Startup
         .AddInMemoryClients(Config.Clients)
         .AddAspNetIdentity<ApplicationUser>()
         .AddDeveloperSigningCredential(); // Only for development
-
-        // Register custom stores
-        services.AddTransient<IPersistedGrantStore, MongoPersistedGrantStore>();
 
         // CORS
         services.AddCors(options =>
