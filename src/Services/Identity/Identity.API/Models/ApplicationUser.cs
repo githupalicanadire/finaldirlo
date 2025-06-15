@@ -1,11 +1,9 @@
 using AspNetCore.Identity.MongoDbCore.Models;
-using MongoDbGenericRepository.Attributes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Identity.API.Models;
 
-[CollectionName("Users")]
 public class ApplicationUser : MongoIdentityUser<ObjectId>
 {
     [BsonElement("firstName")]
@@ -66,7 +64,6 @@ public class ApplicationUser : MongoIdentityUser<ObjectId>
     public string DisplayName => !string.IsNullOrEmpty(FullName) ? FullName : UserName ?? Email ?? Id.ToString();
 }
 
-[CollectionName("Roles")]
 public class ApplicationRole : MongoIdentityRole<ObjectId>
 {
     [BsonElement("description")]
