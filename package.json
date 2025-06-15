@@ -3,10 +3,17 @@
   "version": "1.0.0",
   "description": "E-commerce microservices application built with .NET Core",
   "scripts": {
-    "dev": "echo 'This is a .NET Core microservices project. Please use Docker to run the application:' && echo '' && echo 'docker-compose -f src/docker-compose.yml -f src/docker-compose.override.yml up -d' && echo '' && echo 'Then access the Shopping Web UI at: http://localhost:6005' && echo '' && echo 'Note: This environment does not have .NET Core or Docker installed.' && echo 'For proper development, you need:' && echo '1. .NET Core 8.0 SDK' && echo '2. Docker Desktop' && echo '3. Visual Studio 2022 (recommended)' && exit 1",
-    "build": "echo 'Please use: dotnet build src/eshop-microservices.sln'",
-    "test": "echo 'Please use: dotnet test src/eshop-microservices.sln'",
-    "setup": "echo 'This is a .NET project. Setup completed. Please use Docker to run the application.'"
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'This is a .NET project. Please use: dotnet build src/eshop-microservices.sln'",
+    "test": "echo 'This is a .NET project. Please use: dotnet test src/eshop-microservices.sln'",
+    "setup": "echo 'EShop Microservices - Development environment configured for information server'",
+    "info": "echo 'This is a .NET Core microservices project. Use Docker for full functionality:'",
+    "docker:up": "cd src && docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d",
+    "docker:down": "cd src && docker-compose -f docker-compose.yml -f docker-compose.override.yml down",
+    "dotnet:restore": "cd src && dotnet restore",
+    "dotnet:build": "cd src && dotnet build",
+    "dotnet:run:web": "cd src/WebApps/Shopping.Web && dotnet run"
   },
   "dependencies": {},
   "devDependencies": {},
