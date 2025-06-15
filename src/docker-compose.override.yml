@@ -1,6 +1,7 @@
-version: '3.4'
+version: "3.4"
 
 services:
+  # Database services with persistent storage
   catalogdb:
     container_name: catalogdb
     environment:
@@ -9,10 +10,10 @@ services:
       - POSTGRES_DB=CatalogDb
     restart: always
     ports:
-        - "5432:5432"
+      - "5432:5432"
     volumes:
-      - postgres_catalog:/var/lib/postgresql/data/ 
-      
+      - postgres_catalog:/var/lib/postgresql/data/
+
   basketdb:
     container_name: basketdb
     environment:
@@ -21,15 +22,9 @@ services:
       - POSTGRES_DB=BasketDb
     restart: always
     ports:
-        - "5433:5432"
+      - "5433:5432"
     volumes:
-      - postgres_basket:/var/lib/postgresql/data/ 
-
-  distributedcache:
-    container_name: distributedcache
-    restart: always
-    ports:
-      - "6379:6379"
+      - postgres_basket:/var/lib/postgresql/data/
 
   orderdb:
     container_name: orderdb
@@ -39,6 +34,26 @@ services:
     restart: always
     ports:
       - "1433:1433"
+
+  # MongoDB for Identity Server
+  identitydb:
+    container_name: identitydb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+      - MONGO_INITDB_DATABASE=IdentityServerDb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_identity:/data/db
+
+  # Cache and Message Broker
+  distributedcache:
+    container_name: distributedcache
+    restart: always
+    ports:
+      - "6379:6379"
 
   messagebroker:
     container_name: messagebroker
@@ -51,17 +66,39 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  # Identity Server 4 with MongoDB
+  identity.api:
+    container_name: identity.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - MongoDbSettings__ConnectionString=mongodb://admin:admin123@identitydb:27017/IdentityServerDb?authSource=admin
+      - MongoDbSettings__DatabaseName=IdentityServerDb
+    depends_on:
+      - identitydb
+    ports:
+      - "6010:8080"
+    volumes:
+      - identity_logs:/app/logs
+
+  # Microservices with JWT Authentication
   catalog.api:
+    container_name: catalog.api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ConnectionStrings__Database=Server=catalogdb;Port=5432;Database=CatalogDb;User Id=postgres;Password=postgres;Include Error Detail=true
+      - IdentitySettings__Authority=http://identity.api:8080
+      - IdentitySettings__Audience=catalog.api
+      - IdentitySettings__RequireHttpsMetadata=false
     depends_on:
       - catalogdb
+      - identity.api
     ports:
       - "6000:8080"
 
   basket.api:
+    container_name: basket.api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
@@ -71,23 +108,34 @@ services:
       - MessageBroker__Host=amqp://ecommerce-mq:5672
       - MessageBroker__UserName=guest
       - MessageBroker__Password=guest
+      - IdentitySettings__Authority=http://identity.api:8080
+      - IdentitySettings__Audience=basket.api
+      - IdentitySettings__RequireHttpsMetadata=false
     depends_on:
       - basketdb
       - distributedcache
       - discount.grpc
       - messagebroker
+      - identity.api
     ports:
       - "6001:8080"
 
   discount.grpc:
+    container_name: discount.grpc
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ConnectionStrings__Database=Data Source=discountdb
+      - IdentitySettings__Authority=http://identity.api:8080
+      - IdentitySettings__Audience=discount.api
+      - IdentitySettings__RequireHttpsMetadata=false
+    depends_on:
+      - identity.api
     ports:
       - "6002:8080"
 
   ordering.api:
+    container_name: ordering.api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
@@ -96,33 +144,68 @@ services:
       - MessageBroker__UserName=guest
       - MessageBroker__Password=guest
       - FeatureManagement__OrderFullfilment=false
+      - IdentitySettings__Authority=http://identity.api:8080
+      - IdentitySettings__Audience=ordering.api
+      - IdentitySettings__RequireHttpsMetadata=false
     depends_on:
       - orderdb
       - messagebroker
+      - identity.api
     ports:
       - "6003:8080"
 
+  # API Gateway with JWT validation
   yarpapigateway:
+    container_name: yarpapigateway
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
+      - IdentitySettings__Authority=http://identity.api:8080
+      - IdentitySettings__Audience=gateway.api
+      - IdentitySettings__RequireHttpsMetadata=false
     depends_on:
       - catalog.api
       - basket.api
       - ordering.api
+      - identity.api
     ports:
       - "6004:8080"
 
+  # Web Application with OIDC Authentication
   shopping.web:
+    container_name: shopping.web
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ApiSettings__GatewayAddress=http://yarpapigateway:8080
+      - IdentitySettings__Authority=http://localhost:6010
+      - IdentitySettings__ClientId=shopping.web
+      - IdentitySettings__ClientSecret=""
+      - IdentitySettings__Scope=eshop.api openid profile email
+      - IdentitySettings__RequireHttpsMetadata=false
     depends_on:
       - yarpapigateway
+      - identity.api
     ports:
       - "6005:8080"
+
+  # MongoDB Admin Interface
+  mongo-express:
+    container_name: mongo-express
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=admin123
+      - ME_CONFIG_MONGODB_SERVER=identitydb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - identitydb
+    ports:
+      - "8081:8081"
 
 volumes:
   postgres_catalog:
   postgres_basket:
+  mongodb_identity:
+  identity_logs:
