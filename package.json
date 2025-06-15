@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": ".NET 8 Microservices E-commerce Application",
   "scripts": {
-    "install": "echo 'This is a .NET application. Please ensure Docker Desktop is running and .NET 8 SDK is installed.'",
-    "dev": "echo 'Starting .NET microservices application...' && echo 'Note: This application requires Docker Desktop to be running.' && echo 'The application should be accessible at http://localhost:6005 once all services are up.' && echo 'For full setup, please run the setup.ps1 script in PowerShell or use Docker Compose manually.'",
+    "preinstall": "echo 'Installing development tools for .NET microservices project...'",
+    "install": "npm install http-server --save-dev",
+    "dev": "echo 'Starting development server for .NET microservices project...' && npm run serve:info",
+    "serve:info": "npx http-server . -p 3000 -o --proxy http://localhost:6005? -c-1",
     "start": "npm run dev",
     "setup": "echo 'Please run setup.ps1 script in PowerShell for full setup'",
     "docker:up": "docker-compose -f src/docker-compose.yml -f src/docker-compose.override.yml up -d",
@@ -28,7 +30,9 @@
   ],
   "author": "Mehmet Ozkaya",
   "license": "MIT",
-  "devDependencies": {},
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
   "engines": {
     "node": ">=14.0.0"
   },
