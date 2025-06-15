@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using IdentityServer4.Services;
 using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
+using Identity.API.Models;
 
 namespace Identity.API.Controllers
 {
@@ -55,18 +55,5 @@ namespace Identity.API.Controllers
                 return Redirect(logout.PostLogoutRedirectUri);
             return RedirectToAction("Index", "Home");
         }
-    }
-
-    public class LoginViewModel
-    {
-        [Required]
-        public string Username { get; set; }
-        
-        [Required]
-        [DataType(DataType.Password)]
-        public string Password { get; set; }
-        
-        public bool RememberLogin { get; set; }
-        public string ReturnUrl { get; set; }
     }
 }
