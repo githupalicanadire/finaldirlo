@@ -62,86 +62,242 @@ function serveInfoPage(res) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EShop Microservices - Development Info</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+
         h1 {
-            color: #0066cc;
-            border-bottom: 3px solid #0066cc;
-            padding-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: center;
         }
+
         h2 {
-            color: #0088cc;
-            margin-top: 30px;
+            color: #4f46e5;
+            margin: 35px 0 15px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
+        h3 {
+            color: #1e293b;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        p, li {
+            color: #64748b;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
         .status {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 20px 0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            border: none;
+            position: relative;
+            overflow: hidden;
         }
+
+        .status::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
         .error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            color: #dc2626;
         }
+
+        .error::before {
+            background: #dc2626;
+        }
+
         .info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            color: #2563eb;
         }
+
+        .info::before {
+            background: #2563eb;
+        }
+
         .success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            color: #16a34a;
         }
+
+        .success::before {
+            background: #16a34a;
+        }
+
         code {
-            background: #f8f9fa;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
+            background: rgba(99, 102, 241, 0.1);
+            color: #4f46e5;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
+
         pre {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
             overflow-x: auto;
-            border-left: 4px solid #0066cc;
+            border-left: 4px solid #6366f1;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 15px 0;
         }
+
         .service-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
-            margin: 20px 0;
+            margin: 25px 0;
         }
+
         .service-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            border-left: 4px solid #28a745;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 24px;
+            border-radius: 16px;
+            border-left: 5px solid #10b981;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #10b981, #06d6a0);
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+        }
+
         .port {
-            font-weight: bold;
-            color: #007bff;
+            font-weight: 700;
+            color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        a:hover {
+            color: #4f46e5;
+            text-decoration: underline;
+        }
+
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        strong {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .service-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animasyonlar */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .service-card {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        /* Hover efektleri */
+        .status:hover {
+            transform: translateX(5px);
+            transition: transform 0.2s ease;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🏪 EShop Microservices Development Server</h1>
-        
+
         <div class="status error">
             <strong>⚠️ Development Environment Issue</strong><br>
             This is a .NET Core microservices project, but the current environment doesn't have .NET Core or Docker installed.
