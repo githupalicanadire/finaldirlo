@@ -1,0 +1,33 @@
+<div class="container mt-5">
+    <div class="bg-light p-5 rounded-lg m-3">
+        <h1 class="display-4">Identity Server</h1>
+        <p class="lead">Welcome to the Identity Server for EShop Microservices</p>
+
+        @if (User.Identity.IsAuthenticated)
+        {
+            <p>Welcome <strong>@User.Identity.Name</strong></p>
+            <a href="/Account/Logout" class="btn btn-secondary">Logout</a>
+        }
+        else
+        {
+            <a href="/Account/Login" class="btn btn-primary">Login</a>
+        }
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Demo Users</h3>
+            <ul>
+                <li><strong>admin</strong> / admin123 (Admin Role)</li>
+                <li><strong>customer</strong> / customer123 (Customer Role)</li>
+            </ul>
+
+            <h3>Connected Services</h3>
+            <ul>
+                <li><a href="http://localhost:6005" target="_blank">Shopping Web UI</a></li>
+                <li><a href="http://localhost:6004" target="_blank">API Gateway</a></li>
+                <li><a href="http://localhost:8081" target="_blank">MongoDB Admin</a></li>
+            </ul>
+        </div>
+    </div>
+</div>

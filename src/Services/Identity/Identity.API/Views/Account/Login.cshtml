@@ -1,0 +1,39 @@
+@model Identity.API.Models.LoginViewModel
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Login</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="mb-3">
+                            <label for="Username" class="form-label">Username</label>
+                            <input type="text" class="form-control" name="Username" value="@Model.Username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Password" class="form-label">Password</label>
+                            <input type="password" class="form-control" name="Password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" name="RememberLogin" value="true">
+                            <label class="form-check-label">Remember me</label>
+                        </div>
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        <a href="/" class="btn btn-secondary">Cancel</a>
+                    </form>
+
+                    <hr>
+                    <h5>Demo Users:</h5>
+                    <ul>
+                        <li><strong>admin</strong> / admin123</li>
+                        <li><strong>customer</strong> / customer123</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

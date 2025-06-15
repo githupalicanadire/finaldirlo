@@ -1,0 +1,48 @@
+{
+  "name": "eshop-microservices",
+  "version": "1.0.0",
+  "description": ".NET 8 Microservices E-commerce Application",
+  "scripts": {
+    "preinstall": "echo 'Installing development tools for .NET microservices project...'",
+    "install": "npm install http-server --save-dev",
+    "dev": "echo 'Starting development server for .NET microservices project...' && npm run serve:info",
+    "serve:info": "npx http-server . -p 8080 -o -c-1",
+    "start": "npm run dev",
+    "setup": "echo 'Please run setup.ps1 script in PowerShell for full setup'",
+    "docker:up": "docker-compose -f src/docker-compose.yml -f src/docker-compose.override.yml up -d",
+    "docker:down": "docker-compose -f src/docker-compose.yml -f src/docker-compose.override.yml down",
+    "docker:logs": "docker-compose -f src/docker-compose.yml -f src/docker-compose.override.yml logs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aspnetrun/run-aspnetcore-microservices"
+  },
+  "keywords": [
+    "dotnet",
+    "microservices",
+    "docker",
+    "aspnetcore",
+    "cqrs",
+    "ddd",
+    "rabbitmq",
+    "postgresql",
+    "redis"
+  ],
+  "author": "Mehmet Ozkaya",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "notes": [
+    "This is a .NET 8 microservices application, not a Node.js project.",
+    "The npm scripts serve as convenience wrappers.",
+    "To run the full application, you need:",
+    "1. Docker Desktop installed and running",
+    "2. .NET 8 SDK installed",
+    "3. Run 'docker-compose -f src/docker-compose.yml -f src/docker-compose.override.yml up -d'",
+    "4. Access the application at http://localhost:6005"
+  ]
+}
