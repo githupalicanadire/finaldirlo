@@ -14,6 +14,11 @@ RUN dotnet restore "Services/Identity/Identity.API/Identity.API.csproj"
 # Copy everything else and build
 COPY . .
 WORKDIR "/src/Services/Identity/Identity.API"
+
+# Clean previous builds
+RUN dotnet clean "Identity.API.csproj"
+
+# Build
 RUN dotnet build "Identity.API.csproj" -c Release -o /app/build
 
 FROM build AS publish
