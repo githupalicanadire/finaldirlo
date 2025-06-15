@@ -1,12 +1,13 @@
 using Identity.API.Configuration;
 using Identity.API.Data;
 using Identity.API.Models;
-using IdentityServer4.EntityFramework.DbContexts;
-using IdentityServer4.EntityFramework.Mappers;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using AspNetCore.Identity.MongoDbCore.Extensions;
+using AspNetCore.Identity.MongoDbCore.Infrastructure;
+using MongoDB.Driver;
+using MongoDB.Bson;
 using Serilog;
-using System.Reflection;
+using Microsoft.AspNetCore.Identity;
+using IdentityServer4.Stores;
 
 namespace Identity.API;
 
@@ -22,7 +23,11 @@ public class Program
 
         try
         {
-            Log.Information("Starting Identity Server...");
+            Log.Information("Starting Identity Server with MongoDB...");
+            
+            // Register MongoDB Class Maps
+            MongoDbConfig.RegisterClassMaps();
+            
             var host = CreateHostBuilder(args).Build();
             
             // Initialize Database
@@ -55,23 +60,15 @@ public class Program
 
         try
         {
-            // Identity Database
-            var identityContext = services.GetRequiredService<ApplicationDbContext>();
-            identityContext.Database.Migrate();
-
-            // IdentityServer Configuration Database
-            var configContext = services.GetRequiredService<ConfigurationDbContext>();
-            configContext.Database.Migrate();
-
-            // IdentityServer Operational Database
-            var persistedGrantContext = services.GetRequiredService<PersistedGrantDbContext>();
-            persistedGrantContext.Database.Migrate();
+            var context = services.GetRequiredService<MongoIdentityContext>();
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
             // Seed Configuration Data
-            SeedConfigurationData(configContext);
+            SeedConfigurationData(context).Wait();
 
             // Seed Identity Data
-            SeedIdentityData(services).Wait();
+            SeedIdentityData(userManager, roleManager).Wait();
 
             Log.Information("Database seeding completed successfully");
         }
@@ -81,61 +78,54 @@ public class Program
         }
     }
 
-    private static void SeedConfigurationData(ConfigurationDbContext context)
+    private static async Task SeedConfigurationData(MongoIdentityContext context)
     {
-        if (!context.Clients.Any())
+        // Seed Clients
+        var clientsCount = await context.Clients.CountDocumentsAsync(_ => true);
+        if (clientsCount == 0)
         {
-            foreach (var client in Config.Clients)
-            {
-                context.Clients.Add(client.ToEntity());
-            }
-            context.SaveChanges();
+            var clients = Config.Clients.ToList();
+            await context.Clients.InsertManyAsync(clients);
             Log.Information("Clients seeded");
         }
 
-        if (!context.IdentityResources.Any())
+        // Seed Identity Resources
+        var identityResourcesCount = await context.IdentityResources.CountDocumentsAsync(_ => true);
+        if (identityResourcesCount == 0)
         {
-            foreach (var resource in Config.IdentityResources)
-            {
-                context.IdentityResources.Add(resource.ToEntity());
-            }
-            context.SaveChanges();
+            var identityResources = Config.IdentityResources.ToList();
+            await context.IdentityResources.InsertManyAsync(identityResources);
             Log.Information("Identity resources seeded");
         }
 
-        if (!context.ApiScopes.Any())
+        // Seed API Scopes
+        var apiScopesCount = await context.ApiScopes.CountDocumentsAsync(_ => true);
+        if (apiScopesCount == 0)
         {
-            foreach (var apiScope in Config.ApiScopes)
-            {
-                context.ApiScopes.Add(apiScope.ToEntity());
-            }
-            context.SaveChanges();
+            var apiScopes = Config.ApiScopes.ToList();
+            await context.ApiScopes.InsertManyAsync(apiScopes);
             Log.Information("API scopes seeded");
         }
 
-        if (!context.ApiResources.Any())
+        // Seed API Resources
+        var apiResourcesCount = await context.ApiResources.CountDocumentsAsync(_ => true);
+        if (apiResourcesCount == 0)
         {
-            foreach (var resource in Config.ApiResources)
-            {
-                context.ApiResources.Add(resource.ToEntity());
-            }
-            context.SaveChanges();
+            var apiResources = Config.ApiResources.ToList();
+            await context.ApiResources.InsertManyAsync(apiResources);
             Log.Information("API resources seeded");
         }
     }
 
-    private static async Task SeedIdentityData(IServiceProvider services)
+    private static async Task SeedIdentityData(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
     {
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
         // Create Roles
         string[] roles = { "Admin", "Customer", "User", "Tester" };
         foreach (var role in roles)
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
-                await roleManager.CreateAsync(new IdentityRole(role));
+                await roleManager.CreateAsync(new ApplicationRole { Name = role, Description = $"{role} role" });
             }
         }
 
@@ -151,7 +141,9 @@ public class Program
                     Email = testUser.Claims.FirstOrDefault(c => c.Type == "email")?.Value,
                     EmailConfirmed = true,
                     FirstName = testUser.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value,
-                    LastName = testUser.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value
+                    LastName = testUser.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value,
+                    PhoneNumberConfirmed = true,
+                    IsActive = true
                 };
 
                 var result = await userManager.CreateAsync(user, testUser.Password);
@@ -190,31 +182,53 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        var connectionString = Configuration.GetConnectionString("DefaultConnection");
-        var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
+        // MongoDB Configuration
+        var mongoDbSettings = Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>();
+        services.AddSingleton(mongoDbSettings);
 
-        // Entity Framework
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(connectionString));
-
-        // ASP.NET Identity
-        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        // MongoDB Client
+        services.AddSingleton<IMongoClient>(sp =>
         {
-            // Password settings
-            options.Password.RequiredLength = 6;
-            options.Password.RequireDigit = true;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequireUppercase = false;
-            options.Password.RequireLowercase = false;
-            
-            // User settings
-            options.User.RequireUniqueEmail = true;
-            options.SignIn.RequireConfirmedEmail = false;
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
+            return new MongoClient(mongoDbSettings.ConnectionString);
+        });
 
-        // IdentityServer4
+        // MongoDB Database
+        services.AddSingleton<IMongoDatabase>(sp =>
+        {
+            var client = sp.GetRequiredService<IMongoClient>();
+            return client.GetDatabase(mongoDbSettings.DatabaseName);
+        });
+
+        // MongoDB Context
+        services.AddSingleton<MongoIdentityContext>();
+
+        // MongoDB Identity Configuration
+        var mongoDbIdentityConfig = new MongoDbIdentityConfiguration
+        {
+            MongoDbSettings = new MongoDbSettings
+            {
+                ConnectionString = mongoDbSettings.ConnectionString,
+                DatabaseName = mongoDbSettings.DatabaseName
+            },
+            IdentityOptionsAction = options =>
+            {
+                // Password settings
+                options.Password.RequiredLength = 6;
+                options.Password.RequireDigit = true;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
+                
+                // User settings
+                options.User.RequireUniqueEmail = true;
+                options.SignIn.RequireConfirmedEmail = false;
+            }
+        };
+
+        // ASP.NET Core Identity with MongoDB
+        services.ConfigureMongoDbIdentity<ApplicationUser, ApplicationRole, ObjectId>(mongoDbIdentityConfig);
+
+        // IdentityServer4 with MongoDB
         services.AddIdentityServer(options =>
         {
             options.Events.RaiseErrorEvents = true;
@@ -223,18 +237,15 @@ public class Startup
             options.Events.RaiseSuccessEvents = true;
             options.EmitStaticAudienceClaim = true;
         })
-        .AddConfigurationStore(options =>
-        {
-            options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
-                sql => sql.MigrationsAssembly(migrationsAssembly));
-        })
-        .AddOperationalStore(options =>
-        {
-            options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
-                sql => sql.MigrationsAssembly(migrationsAssembly));
-        })
+        .AddInMemoryIdentityResources(Config.IdentityResources)
+        .AddInMemoryApiScopes(Config.ApiScopes)
+        .AddInMemoryApiResources(Config.ApiResources)
+        .AddInMemoryClients(Config.Clients)
         .AddAspNetIdentity<ApplicationUser>()
         .AddDeveloperSigningCredential(); // Only for development
+
+        // Register custom stores
+        services.AddTransient<IPersistedGrantStore, MongoPersistedGrantStore>();
 
         // CORS
         services.AddCors(options =>
@@ -242,9 +253,15 @@ public class Startup
             options.AddPolicy("CorsPolicy", policy =>
             {
                 policy
-                    .AllowAnyOrigin()
+                    .WithOrigins(
+                        "http://localhost:6005",
+                        "https://localhost:6005",
+                        "http://localhost:6004",
+                        "https://localhost:6004"
+                    )
                     .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
         });
 
